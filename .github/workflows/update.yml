@@ -1,0 +1,78 @@
+name: Generate Games Database
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Generate JSON Database
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -c '
+          import requests
+          import json
+
+          username = "ALPHAXGAMER31"
+          repos = ["OnlineFix1", "OnlineFix2"]
+          folder_name = "OnlineFixTorrent"
+          
+          all_games = {}
+
+          for repo in repos:
+              api_url = f"https://api.github.com/repos/{username}/{repo}/contents/{folder_name}"
+              print(f"Fetching from {repo}/{folder_name}...")
+              
+              response = requests.get(api_url)
+              if response.status_code == 200:
+                  items = response.json()
+                  
+                  if isinstance(items, list):
+                      for file in items:
+                          file_name = file["name"]
+                          
+                          # قبول ملفات التورنت فقط وتجاهل أي ملفات أخرى
+                          if file_name.endswith(".torrent"):
+                              # تنظيف اسم اللعبة بإزالة الامتداد
+                              clean_name = file_name[:-8]
+                              
+                              # منع التكرار بناءً على اسم اللعبة
+                              if clean_name not in all_games:
+                                  all_games[clean_name] = {
+                                      "name": clean_name,
+                                      "file_name": file_name,
+                                      "download_url": file.get("download_url"),
+                                      "html_url": file.get("html_url"),
+                                      "repo": repo
+                                  }
+              else:
+                  print(f"Failed to fetch {repo}: {response.status_code}")
+
+          database_List = list(all_games.values())
+          print(f"Total unique games found: {len(database_List)}")
+
+          with open("database.json", "w", encoding="utf-8") as f:
+              json.dump(database_List, f, ensure_ascii=False, indent=4)
+          '
+
+      - name: Commit and Push Database
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add database.json
+          git diff --quiet && git diff --cached --quiet || (git commit -m "Auto-update games database [skip ci]" && git push)
