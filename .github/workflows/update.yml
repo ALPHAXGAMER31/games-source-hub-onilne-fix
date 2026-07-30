@@ -55,11 +55,20 @@ jobs:
                               if clean_name not in all_games:
                                   all_games[clean_name] = {
                                       "name": clean_name,
-                                      "file_name": file_name,
-                                      "download_url": file.get("download_url"),
-                                      "html_url": file.get("html_url"),
-                                      "repo": repo
+                                      "downloads": []
                                   }
+                              
+                              # إضافة تفاصيل التنزيل داخل مصفوفة downloads
+                              download_item = {
+                                  "title": clean_name,
+                                  "fileSize": "Unknown",
+                                  "uris": [
+                                      file.get("download_url")
+                                  ],
+                                  "uploadDate": ""
+                              }
+                              
+                              all_games[clean_name]["downloads"].append(download_item)
               else:
                   print(f"Failed to fetch {repo}: {response.status_code}")
 
