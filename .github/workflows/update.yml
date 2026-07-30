@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install Dependencies
+        run: pip install requests
+
       - name: Generate JSON Database
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,12 +49,9 @@ jobs:
                       for file in items:
                           file_name = file["name"]
                           
-                          # قبول ملفات التورنت فقط وتجاهل أي ملفات أخرى
                           if file_name.endswith(".torrent"):
-                              # تنظيف اسم اللعبة بإزالة الامتداد
                               clean_name = file_name[:-8]
                               
-                              # منع التكرار بناءً على اسم اللعبة
                               if clean_name not in all_games:
                                   all_games[clean_name] = {
                                       "name": clean_name,
@@ -63,11 +63,11 @@ jobs:
               else:
                   print(f"Failed to fetch {repo}: {response.status_code}")
 
-          database_List = list(all_games.values())
-          print(f"Total unique games found: {len(database_List)}")
+          database_list = list(all_games.values())
+          print(f"Total unique games found: {len(database_list)}")
 
           with open("database.json", "w", encoding="utf-8") as f:
-              json.dump(database_List, f, ensure_ascii=False, indent=4)
+              json.dump(database_list, f, ensure_ascii=False, indent=4)
           '
 
       - name: Commit and Push Database
